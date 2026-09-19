@@ -1,0 +1,153 @@
+{
+  "$schema_version": "2.0.0",
+  "description": "Failure taxonomy for creation-code pytest-selenium validation. Locator recovery is handled by Chrome CDP/browser MCP inspection, not Python locator-discovery scripts.",
+  "validation_patterns": [
+    {
+      "pattern_id": "V001",
+      "classification": "unregistered_marker",
+      "severity": "medium",
+      "applies_to_modes": ["validation"],
+      "evidence_sources": ["pytest.log", "integrity_report.json", "pytest.ini"],
+      "signatures": ["not found in markers configuration option", "Unknown pytest.mark.*"],
+      "auto_fix": {
+        "action": "sync_markers",
+        "description": "Register Gherkin tags from the target feature in pytest.ini markers.",
+        "command_hint": "python .agents/skills/creation-code/scripts/sync_markers.py --feature <feature> --out-dir <out-dir>"
+      },
+      "max_retry_for_pattern": 1
+    },
+    {
+      "pattern_id": "V002",
+      "classification": "undefined_step",
+      "severity": "high",
+      "applies_to_modes": ["integrity", "validation"],
+      "evidence_sources": ["pytest.log", "integrity_report.json", "feature file"],
+      "signatures": ["StepDefinitionNotFoundError", "Step definition is not found", "Undefined step"],
+      "auto_fix": {
+        "action": "rerun_step_generator",
+        "description": "Create or fix the missing pytest-bdd decorator.",
+        "command_hint": "Run step-generator reuse matching, then add only the missing decorator or loader."
+      },
+      "max_retry_for_pattern": 2
+    },
+    {
+      "pattern_id": "V003",
+      "classification": "feature_not_collected",
+      "severity": "high",
+      "applies_to_modes": ["integrity", "validation"],
+      "evidence_sources": ["pytest.log", "steps/test_*_steps.py", "feature file"],
+      "signatures": ["no tests ran", "collected 0 items", "file or directory not found"],
+      "auto_fix": {
+        "action": "fix_loader",
+        "description": "Create or fix the steps/test_*_steps.py loader.",
+        "command_hint": "Ensure 'scenarios('../features/<feature>.feature')' exists in the matching loader."
+      },
+      "max_retry_for_pattern": 2
+    },
+    {
+      "pattern_id": "V004",
+      "classification": "page_not_found",
+      "severity": "high",
+      "applies_to_modes": ["integrity", "validation"],
+      "evidence_sources": ["pytest.log", "pages/page_registry.py", "page object"],
+      "signatures": ["Page '', was not found", "Available pages"],
+      "auto_fix": {
+        "action": "rerun_page_generator_registry",
+        "description": "Update pages/page_registry.py and page object imports.",
+        "command_hint": "Run page-generator with registry reuse first; add only the missing page key."
+      },
+      "max_retry_for_pattern": 2
+    },
+    {
+      "pattern_id": "V005",
+      "classification": "overlay_blocking_runtime",
+      "severity": "high",
+      "applies_to_modes": ["validation"],
+      "evidence_sources": ["pytest.log", "browser-artifacts/screenshot.png", "browser-artifacts/page_source.html"],
+      "signatures": ["ElementClickInterceptedException", "element click intercepted", "Other element would receive the click"],
+      "auto_fix": {
+        "action": "add_dismiss_overlay_step",
+        "description": "Add a targeted generic dismiss-overlay step, then rerun integrity and pytest validation.",
+        "command_hint": "Add: When user dismisses overlay \"<label>\" if visible"
+      },
+      "max_retry_for_pattern": 2
+    },
+    {
+      "pattern_id": "V006",
+      "classification": "element_offscreen_runtime",
+      "severity": "high",
+      "applies_to_modes": ["validation"],
+      "evidence_sources": ["pytest.log", "browser-artifacts/screenshot.png", "browser-artifacts/page_source.html"],
+      "signatures": ["MoveTargetOutOfBoundsException", "element not interactable", "Element is not clickable at point"],
+      "auto_fix": {
+        "action": "add_scroll_until_visible_step",
+        "description": "Add a targeted generic scroll-until-visible step, then rerun integrity and pytest validation.",
+        "command_hint": "Add: When user scrolls \"down\" until \"<element_key>\" is visible"
+      },
+      "max_retry_for_pattern": 2
+    },
+    {
+      "pattern_id": "V007",
+      "classification": "locator_not_found_or_not_clickable",
+      "severity": "high",
+      "applies_to_modes": ["validation"],
+      "evidence_sources": ["pytest.log", "browser-artifacts/page_source.html", "reports/screenshots"],
+      "signatures": [
+        "NoSuchElementException",
+        "TimeoutException",
+        "locator ''",
+        "was not found",
+        "Unable to locate element",
+        "not clickable"
+      ],
+      "auto_fix": {
+        "action": "inspect_with_chrome_cdp_mcp",
+        "description": "Use Chrome CDP/Browser MCP to inspect the live page state, validate the locator with the requested action, retry evidence-driven recovery up to 5 attempts, then update Selenium locators additively or escalate.",
+        "command_hint": "Use browser MCP/CDP to navigate through required pre-actions, inspect the target DOM, and click/fill/find with the selected locator; do not run Python locator discovery."
+      },
+      "max_retry_for_pattern": 5
+    },
+    {
+      "pattern_id": "V008",
+      "classification": "navigation_assertion_failed",
+      "severity": "medium",
+      "applies_to_modes": ["validation"],
+      "evidence_sources": ["pytest.log", "browser-artifacts/metadata.json", "browser-artifacts/page_source.html"],
+      "signatures": ["url_contains", "current url", "is_displayed", "redirected"],
+      "auto_fix": {
+        "action": "fix_navigation_contract",
+        "description": "Check URL path config, is_displayed(), redirect expectation, and scenario order.",
+        "command_hint": "Compare current url/title/page source with the expected page before editing page objects."
+      },
+      "max_retry_for_pattern": 2
+    },
+    {
+      "pattern_id": "V009",
+      "classification": "expected_text_mismatch",
+      "severity": "medium",
+      "applies_to_modes": ["validation"],
+      "evidence_sources": ["pytest.log", "browser-artifacts/page_source.html"],
+      "signatures": ["AssertionError", "expected", "actual", "should see text"],
+      "auto_fix": {
+        "action": "verify_expected_text",
+        "description": "Verify expected text against live evidence before changing business expectations.",
+        "command_hint": "Inspect page source and ask before changing business-facing expected text."
+      },
+      "max_retry_for_pattern": 1
+    },
+    {
+      "pattern_id": "V010",
+      "classification": "browser_or_network",
+      "severity": "medium",
+      "applies_to_modes": ["validation"],
+      "evidence_sources": ["pytest.log"],
+      "signatures": ["net::", "ERR_", "WebDriverException", "SessionNotCreatedException", "connection refused"],
+      "auto_fix": {
+        "action": "retry_without_code_change",
+        "description": "Retry within the 5-attempt validation budget without code changes, then report infrastructure blocked.",
+        "command_hint": "Rerun within the configured attempt budget; if repeated, inspect base url/browser readiness instead of editing generated code."
+      },
+      "max_retry_for_pattern": 2
+    }
+  ]
+}
