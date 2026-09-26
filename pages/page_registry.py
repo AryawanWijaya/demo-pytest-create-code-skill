@@ -1,3 +1,4 @@
+from pages.checkboxes_page import CheckboxesPage
 from pages.dropdown_page import DropdownPage
 from pages.login_page import LoginPage
 from pages.secure_page import SecurePage
@@ -47,4 +48,12 @@ class PageRegistry:
                 self.settings.default_timeout
             )
 
-        raise KeyError("Page '{}' was not found. Available pages: login, secure, dropdown".format(parsed_key))
+        if parsed_key == "checkboxes":
+            return CheckboxesPage(
+                self.driver,
+                self.settings.base_url,
+                self.settings.url_path_for("checkboxes"),
+                self.settings.default_timeout
+            )
+
+        raise KeyError("Page '{}' was not found. Available pages: login, secure, dropdown, checkboxes".format(parsed_key))

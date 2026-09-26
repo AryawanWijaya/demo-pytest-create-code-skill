@@ -6,7 +6,7 @@ from utilities.browser_factory import create_driver
 from utilities.config import Settings
 from utilities.scenario_context import ScenarioContext
 
-pytest_plugins = ["steps.base_steps", "steps.login_step", "steps.dropdown_steps"]
+pytest_plugins = ["steps.base_steps", "steps.login_step", "steps.dropdown_steps", "steps.checkboxes_steps"]
 
 load_dotenv()
 def pytest_addoption(parser):
