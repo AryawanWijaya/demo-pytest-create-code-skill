@@ -36,6 +36,8 @@ class Settings:
 
     def url_path_for(self, page_name):
         key=f"{page_name}_url_path"
+        if key in self.config_values:
+            return self.config_values[key]
         attr=getattr(self,key,None)
         if attr is None:
             raise KeyError(f"url path not found: {key} on config.properties")

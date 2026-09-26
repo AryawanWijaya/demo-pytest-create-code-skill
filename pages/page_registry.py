@@ -1,3 +1,4 @@
+from pages.dropdown_page import DropdownPage
 from pages.login_page import LoginPage
 from pages.secure_page import SecurePage
 from utilities.config import Settings
@@ -12,7 +13,7 @@ class PageRegistry:
     def parse_key(self,key):
         parsed_key="_".join(str(key).strip().lower().replace("-"," ").split())
         if parsed_key.endswith("_page"):
-            return parsed_key[:5]
+            return parsed_key[:-5]
         return parsed_key
 
     def get(self,page_key):
@@ -38,4 +39,12 @@ class PageRegistry:
                 self.settings.default_timeout
             )
 
-        raise KeyError("Page '{}' was not found.".format(parsed_key))
+        if parsed_key == "dropdown":
+            return DropdownPage(
+                self.driver,
+                self.settings.base_url,
+                self.settings.url_path_for("dropdown"),
+                self.settings.default_timeout
+            )
+
+        raise KeyError("Page '{}' was not found. Available pages: login, secure, dropdown".format(parsed_key))
